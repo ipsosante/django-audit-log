@@ -211,11 +211,11 @@ class AuditLog(object):
             action_user_field = LastUserField(related_name = rel_name, editable = False, to = 'self')
 
         return {
-            'action_id' : models.AutoField(primary_key = True),
+            'id' : models.AutoField(primary_key = True),
             'action_date' : models.DateTimeField(default = datetime_now, editable = False, blank=False),
             'action_user' : action_user_field,
             'action_type' : models.CharField(max_length = 1, editable = False, choices = (
-                ('I', _('Created')),
+                ('C', _('Created')),
                 ('U', _('Changed')),
                 ('D', _('Deleted')),
             )),
