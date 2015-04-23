@@ -27,16 +27,8 @@ class UserLoggingMiddleware(object):
         if settings.DISABLE_AUDIT_LOG:
             return
         if not request.method in ('GET', 'HEAD', 'OPTIONS', 'TRACE'):
-            if hasattr(request, 'user') and request.user.is_authenticated():
-                user = request.user
-
-            else:
-                user = None
-
-            session = request.session.session_key
-
-            update_pre_save_info = curry(self._update_pre_save_info, user, session)
-            update_post_save_info = curry(self._update_post_save_info, user, session)
+            update_pre_save_info = curry(self._update_pre_save_info, request)
+            update_post_save_info = curry(self._update_post_save_info, request)
             signals.pre_save.connect(update_pre_save_info,  dispatch_uid = (self.__class__, request,), weak = False)
             signals.post_save.connect(update_post_save_info,  dispatch_uid = (self.__class__, request,), weak = False)
 
@@ -48,7 +40,15 @@ class UserLoggingMiddleware(object):
         return response
 
 
-    def _update_pre_save_info(self, user, session, sender, instance, **kwargs):
+    def _update_pre_save_info(self, request, sender, instance, **kwargs):
+
+        if hasattr(request, 'user') and request.user.is_authenticated():
+            user = request.user
+        else:
+            user = None
+
+        session = request.session.session_key
+
         registry = registration.FieldRegistry(fields.LastUserField)
         if sender in registry:
             for field in registry.get_fields(sender):
@@ -60,7 +60,15 @@ class UserLoggingMiddleware(object):
                 setattr(instance, field.name, session)
 
 
-    def _update_post_save_info(self, user, session, sender, instance, created, **kwargs ):
+    def _update_post_save_info(self, request, sender, instance, created, **kwargs ):
+
+        if hasattr(request, 'user') and request.user.is_authenticated():
+            user = request.user
+        else:
+            user = None
+
+        session = request.session.session_key
+
         if created:
             registry = registration.FieldRegistry(fields.CreatingUserField)
             if sender in registry:
