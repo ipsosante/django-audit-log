@@ -211,11 +211,11 @@ class AuditLog(object):
             action_user_field = LastUserField(related_name = rel_name, editable = False, to = 'self')
 
         return {
-            'id' : models.AutoField(primary_key = True),
+            'action_id' : models.AutoField(primary_key = True),
             'action_date' : models.DateTimeField(default = datetime_now, editable = False, blank=False),
             'action_user' : action_user_field,
             'action_type' : models.CharField(max_length = 1, editable = False, choices = (
-                ('C', _('Created')),
+                ('I', _('Created')),
                 ('U', _('Changed')),
                 ('D', _('Deleted')),
             )),
@@ -229,9 +229,21 @@ class AuditLog(object):
         Returns a dictionary of Meta options for the
         autdit log model.
         """
+
+        def convert(name):
+            import re
+            s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+            return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+        db_table = ''
+        if model._meta.app_label:
+            db_table = model._meta.app_label + '_'
+        db_table += '%s_history' % convert(model._meta.object_name)
+
         result = {
             'ordering' : ('-action_date',),
             'app_label' : model._meta.app_label,
+            'db_table' : db_table,
         }
         from django.db.models.options import DEFAULT_NAMES
         if 'default_permissions' in DEFAULT_NAMES:
@@ -247,5 +259,5 @@ class AuditLog(object):
         attrs = self.copy_fields(model)
         attrs.update(self.get_logging_fields(model))
         attrs.update(Meta = type(str('Meta'), (), self.get_meta_options(model)))
-        name = str('%sAuditLogEntry'%model._meta.object_name)
+        name = str('%sHistory'%model._meta.object_name)
         return type(name, (models.Model,), attrs)
