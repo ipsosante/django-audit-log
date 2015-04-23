@@ -26,11 +26,10 @@ class UserLoggingMiddleware(object):
     def process_request(self, request):
         if settings.DISABLE_AUDIT_LOG:
             return
-        if not request.method in ('GET', 'HEAD', 'OPTIONS', 'TRACE'):
-            update_pre_save_info = curry(self._update_pre_save_info, request)
-            update_post_save_info = curry(self._update_post_save_info, request)
-            signals.pre_save.connect(update_pre_save_info,  dispatch_uid = (self.__class__, request,), weak = False)
-            signals.post_save.connect(update_post_save_info,  dispatch_uid = (self.__class__, request,), weak = False)
+        update_pre_save_info = curry(self._update_pre_save_info, request)
+        update_post_save_info = curry(self._update_post_save_info, request)
+        signals.pre_save.connect(update_pre_save_info,  dispatch_uid = (self.__class__, request,), weak = False)
+        signals.post_save.connect(update_post_save_info,  dispatch_uid = (self.__class__, request,), weak = False)
 
     def process_response(self, request, response):
         if settings.DISABLE_AUDIT_LOG:
